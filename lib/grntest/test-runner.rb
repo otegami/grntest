@@ -164,7 +164,7 @@ module Grntest
         context.input_type = @tester.input_type
         context.output_type = @tester.output_type
         context.timeout = @tester.timeout
-        context.timeout = 0 if @tester.gdb
+        context.timeout = 0 if @tester.gdb || @tester.lldb
         context.read_timeout = @tester.read_timeout
         context.default_timeout = context.timeout
         context.default_read_timeout = context.read_timeout
@@ -291,6 +291,23 @@ call (int)chdir("#{context.temporary_directory_path}")
         command_line << "--command=#{gdb_command_path}"
         command_line << "--quiet"
         command_line << "--args"
+      elsif @tester.lldb
+        if libtool_wrapper?(command)
+          command_line << find_libtool(command)
+          command_line << "--mode=execute"
+        end
+        command_line << @tester.lldb
+        lldb_command_path = context.temporary_directory_path + "groonga.lldb"
+        lldb_command_path.open("w") do |lldb_command|
+          lldb_command.puts(<<-COMMANDS)
+breakpoint set --name main
+run
+expression -- (int)chdir("#{context.temporary_directory_path}")
+          COMMANDS
+        end
+        command_line << "--source"
+        command_line << lldb_command_path.to_s
+        command_line << "--"
       elsif @tester.rr
         if libtool_wrapper?(command)
           command_line << find_libtool(command)
@@ -432,7 +449,7 @@ call (int)chdir("#{context.temporary_directory_path}")
               pid = nil
               raise
             end
-            raise unless @tester.gdb
+            raise unless @tester.gdb && @tester.lldb
             retry
           end
           yield(executor)
@@ -463,7 +480,7 @@ call (int)chdir("#{context.temporary_directory_path}")
     def ensure_process_finished(pid)
       return if pid.nil?
 
-      if @tester.gdb
+      if @tester.gdb || @tester.lldb
         Process.waitpid(pid)
         return
       end

@@ -211,6 +211,12 @@ module Grntest
           tester.gdb = command || tester.default_gdb
         end
 
+        parser.on("--lldb[=COMMAND]",
+                  "Run Groonga on lldb and use COMMAND as lldb",
+                  "(#{tester.default_lldb})") do |command|
+          tester.lldb = command || tester.default_lldb
+        end
+
         parser.on("--rr[=COMMAND]",
                   "Run Groonga on 'rr record' and use COMMAND as rr",
                   "(#{tester.default_rr})") do |command|
@@ -357,6 +363,7 @@ module Grntest
     attr_accessor :n_workers
     attr_accessor :output
     attr_accessor :gdb, :default_gdb
+    attr_accessor :lldb, :default_lldb
     attr_accessor :rr, :default_rr
     attr_accessor :valgrind, :default_valgrind
     attr_accessor :timeout
@@ -592,6 +599,8 @@ module Grntest
     def initialize_debuggers
       @gdb = nil
       @default_gdb = "gdb"
+      @lldb = nil
+      @default_lldb = "lldb"
       @rr = nil
       @default_rr = "rr"
     end
